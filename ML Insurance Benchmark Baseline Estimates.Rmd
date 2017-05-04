@@ -1,0 +1,154 @@
+---
+title: "ML Baseline estimates"
+author: "Michael Harrison"
+date: "May 4, 2017"
+output: html_document
+---
+
+#Load Libraries
+```{r}
+library(caret)
+library(corrplot)
+library(e1071)
+#For parallel processing
+library(parallel)
+library(doParallel)
+```
+
+# Training Initialization 
+- Training Harness
+```{r}
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3,
+                           classProbs = TRUE, summaryFunction = twoClassSummary)
+metric <- "ROC"
+training$CARAVAN <- make.names(training$CARAVAN, unique = FALSE)
+```
+
+#Configure parallel Processing
+```{r}
+#Configures parallel processing
+paraOn <- function(){
+        cluster <- makeCluster(detectCores()-1)
+        registerDoParallel(cluster)}
+
+paraOff <- function(){
+        cluster <- makeCluster(detectCores()-1)
+        stopCluster(cluster)
+        registerDoSEQ()}
+
+para <- function(state){
+        cluster <- makeCluster(detectCores()-1)
+        if(state == "on"){
+                start.time <- Sys.time()
+                registerDoParallel(cluster)
+        }
+        if(state == "off"){
+                stopCluster(cluster)
+                registerDoSEQ()
+                end.time <- Sys.time()
+                elapsed = end.time - start.time
+                return(elapsed)
+        }
+        else{
+                stop()
+        }
+}
+```
+
+#Baseline Algorithm Suite
+
+##GLMNET
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+fitGLMNET <- train(CARAVAN~., data = training, 
+             method = "glmnet", metric = metric,
+             trControl = fitControl)
+end.time <- Sys.time()
+time.takenGLMNET <- end.time - start.time
+paraOff()
+fitGLMNET
+```
+
+##Random Forest
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+fitRF <- train(CARAVAN~., data = training,
+                method = "rf", metric = metric,
+                trControl = fitControl)
+end.time <- Sys.time()
+time.takenRF <- end.time - start.time
+paraOff()
+fitRF
+```
+
+
+#Support Vector Machines
+```{r}
+#Support Vector Machines w/ Radial Basis Function
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+fitSVM <- train(CARAVAN~., data = training, 
+             method = "svmRadial", metric = metric,
+             trControl = fitControl)
+end.time <- Sys.time()
+time.takenSVM <- end.time - start.time
+paraOff()
+fitSVM
+```
+
+
+#K Nearest Neighbors
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+fitKNN <- train(CARAVAN~., data = training, 
+             method = "knn", metric = metric,
+             trControl = fitControl)
+end.time <- Sys.time()
+time.takenKNN <- end.time - start.time
+paraOff()
+fitKNN
+```
+
+
+#Stochastic Gradient Boosting
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+fitGBM <- train(CARAVAN~., data = training,
+                method = "gbm", metric = metric,
+                trControl = fitControl, verbose = FALSE, na.action = na.omit)
+end.time <- Sys.time()
+time.takenBGM <- end.time - start.time
+paraOff()
+fitGBM
+```
+
+#Compare Results
+```{r}
+baselineResults <- resamples(list(SVM = fitSVM,
+                                  GLMNET = fitGLMNET,
+                                  RF = fitRF,
+                                  KNN = fitKNN,
+                                  GBM = fitGBM))
+```
+
+```{r}
+scales <- list(x = list(relation = "free"),
+               y = list(relation = "free"))
+dotplot(baselineResults, main = "Baseline Algorithm Suite Results", 
+        scales = scales)
+```
+
+```{r}
+summary(baselineResults)
+```
+
+
