@@ -88,8 +88,8 @@ folder <- "./Attribute Histogram/name.png"
 dir.create(dirname(folder), showWarnings = FALSE)
 
 for(i in 1:9){
-        png(paste("./Attribute Histogram/", "0", toString(i),
-                  "plot", colnames(training)[i], ".png", sep = ""),
+        png(paste("./Attribute Histogram/", "plot", "0", toString(i),
+                  colnames(training)[i], ".png", sep = ""),
             width = 480,
             height = 480,
             units = "px")
@@ -99,8 +99,8 @@ for(i in 1:9){
         dev.off()
 }
 for(i in 10:85){
-        png(paste("./Attribute Histogram/", toString(i),
-                  "plot", colnames(training)[i], ".png", sep = ""),
+        png(paste("./Attribute Histogram/", "plot", toString(i),
+                  colnames(training)[i], ".png", sep = ""),
             width = 480,
             height = 480,
             units = "px")
@@ -112,13 +112,15 @@ for(i in 10:85){
 ```
 
 - Attribute density plots
+
+
 ```{r}
 folder <- "./Attribute Density/name.png"
 dir.create(dirname(folder), showWarnings = FALSE)
 
 for(i in 1:9){
-        png(paste("./Attribute Density/", "0", toString(i),
-                  "plot", colnames(training)[i], ".png", sep = ""),
+        png(paste("./Attribute Density/", "plot", "0", toString(i),
+                  colnames(training)[i], ".png", sep = ""),
             width = 480,
             height = 480,
             units = "px")
@@ -128,8 +130,8 @@ for(i in 1:9){
         dev.off()
 }
 for(i in 10:85){
-        png(paste("./Attribute Density/", toString(i),
-                  "plot", colnames(training)[i], ".png", sep = ""),
+        png(paste("./Attribute Density/", "plot", toString(i),
+                  colnames(training)[i], ".png", sep = ""),
             width = 480,
             height = 480,
             units = "px")
