@@ -173,8 +173,32 @@ $(document).ready(function () {
 
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShkcGx5cilcbmxpYnJhcnkoZGF0YS50YWJsZSlcbmBgYCJ9 -->
+<pre class="r"><code>library(dplyr)
+library(data.table)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmF3ZGF0YSA8LSByZWFkLnRhYmxlKFwidGljZGF0YTIwMDAudHh0XCIpXG5gYGAifQ== -->
+<pre class="r"><code>rawdata &lt;- read.table(&quot;ticdata2000.txt&quot;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGljdGlvbmFyeSA8LSByZWFkLmNzdihcImRpY3Rpb25hcnkudHh0XCIpXG5hdHRyaWJ1dGVzIDwtIGRpY3Rpb25hcnlbMjo4NyxdXG5hdHRyaWJ1dGVzIDwtIGdzdWIoXCIoXlteIF0rICkoW0EtWl0rKSguKiQpXCIsXCJcXFxcMlwiLCBhdHRyaWJ1dGVzKVxuYGBgIn0= -->
+<pre class="r"><code>dictionary &lt;- read.csv(&quot;dictionary.txt&quot;)
+attributes &lt;- dictionary[2:87,]
+attributes &lt;- gsub(&quot;(^[^ ]+ )([A-Z]+)(.*$)&quot;,&quot;\\2&quot;, attributes)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiUiBOb3RlYm9vayIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoK</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiUiBOb3RlYm9vayIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKYGBge3IsIG1lc3NhZ2U9RkFMU0V9CmxpYnJhcnkoZHBseXIpCmxpYnJhcnkoZGF0YS50YWJsZSkKYGBgCgpgYGB7cn0KcmF3ZGF0YSA8LSByZWFkLnRhYmxlKCJ0aWNkYXRhMjAwMC50eHQiKQpgYGAKCmBgYHtyfQpkaWN0aW9uYXJ5IDwtIHJlYWQuY3N2KCJkaWN0aW9uYXJ5LnR4dCIpCmF0dHJpYnV0ZXMgPC0gZGljdGlvbmFyeVsyOjg3LF0KYXR0cmlidXRlcyA8LSBnc3ViKCIoXlteIF0rICkoW0EtWl0rKSguKiQpIiwiXFwyIiwgYXR0cmlidXRlcykKY29sbmFtZXMocmF3ZGF0YSkgPC0gYXR0cmlidXRlcwpgYGAKCgoK</div>
 
 
 

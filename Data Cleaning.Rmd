@@ -3,3 +3,21 @@ title: "R Notebook"
 output: html_notebook
 ---
 
+```{r, message=FALSE}
+library(dplyr)
+library(data.table)
+```
+
+```{r}
+rawdata <- read.table("ticdata2000.txt")
+```
+
+```{r}
+dictionary <- read.csv("dictionary.txt")
+attributes <- dictionary[2:87,]
+attributes <- gsub("(^[^ ]+ )([A-Z]+)(.*$)","\\2", attributes)
+colnames(rawdata) <- attributes
+```
+
+
+
