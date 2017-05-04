@@ -31,7 +31,7 @@ library(doParallel)
 rawdata <- read.table("ticdata2000.txt")
 dictionary <- read.csv("dictionary.txt")
 attributes <- dictionary[2:87,]
-attributes <- gsub("(^[^ ]+ )([A-Z]+)(.*$)","\\2", attributes)
+attributes <- gsub("(^[^ ]+ )([A-Z]+|[A-Z]+[1-9]+)(.*$)","\\2", attributes)
 colnames(rawdata) <- attributes
 #Set target attribute to factor
 rawdata$CARAVAN <- as.factor(rawdata$CARAVAN)
@@ -39,6 +39,8 @@ rawdata$CARAVAN <- as.factor(rawdata$CARAVAN)
 
 #Partition Data
 ```{r}
+seed <- 10
+set.seed(seed)
 inTrain <- createDataPartition(rawdata$CARAVAN, p=0.70, list = FALSE)
 training <- rawdata[inTrain,]
 testing <- rawdata[-inTrain,]
@@ -83,12 +85,11 @@ correlations
 
 - Attribute Histograms
 ```{r}
-
 folder <- "./Attribute Histogram/name.png"
 dir.create(dirname(folder), showWarnings = FALSE)
 
 for(i in 1:9){
-        png(paste("./Attribute Histogram/", "plot", "0", toString(i),
+        png(paste("./Attribute Histogram/", "hist", "0", toString(i),
                   colnames(training)[i], ".png", sep = ""),
             width = 480,
             height = 480,
@@ -99,7 +100,7 @@ for(i in 1:9){
         dev.off()
 }
 for(i in 10:85){
-        png(paste("./Attribute Histogram/", "plot", toString(i),
+        png(paste("./Attribute Histogram/", "hist", toString(i),
                   colnames(training)[i], ".png", sep = ""),
             width = 480,
             height = 480,
@@ -119,24 +120,24 @@ folder <- "./Attribute Density/name.png"
 dir.create(dirname(folder), showWarnings = FALSE)
 
 for(i in 1:9){
-        png(paste("./Attribute Density/", "plot", "0", toString(i),
+        png(paste("./Attribute Density/", "dens", "0", toString(i),
                   colnames(training)[i], ".png", sep = ""),
             width = 480,
             height = 480,
             units = "px")
         
-        hist(training[,i], main = paste(toString(i), "-", names(training)[i]), 
+        plot(density(training[,i]), main = paste(toString(i), "-", names(training)[i]), 
              xlab = names(training)[i])
         dev.off()
 }
 for(i in 10:85){
-        png(paste("./Attribute Density/", "plot", toString(i),
+        png(paste("./Attribute Density/", "dens", toString(i),
                   colnames(training)[i], ".png", sep = ""),
             width = 480,
             height = 480,
             units = "px")
         
-        hist(training[,i], main = paste(toString(i), "-", names(training)[i]), 
+        plot(density(training[,i]), main = paste(toString(i), "-", names(training)[i]), 
              xlab = names(training)[i])
         dev.off()
 }
@@ -147,6 +148,39 @@ for(i in 10:85){
 ```{r}
 skew <- apply(training[,1:85], 2, skewness)
 skew[order(-skew)]
+```
+# Training Initialization 
+- Training Harness
+```{r}
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3,
+                           classProbs = TRUE)
+metric <- "ROC"
+```
+
+```{r}
+#Configures parallel processing
+paraOn <- function(){
+        cluster <- makeCluster(detectCores()-1)
+        registerDoParallel(cluster)}
+
+paraOff <- function(){
+        stopCluster(cluster)
+        registerDoSEQ()}
+
+
+```
+
+- Baseline Algorithm Suite
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+fitSVM <- train(CARAVAN~., data = training,
+                method = "svmRadial", metric = metric,
+                trControl = fitControl)
+end.time <- Sys.time()
+time.takenSVM <- end.time - start.time
+paraOff()
 ```
 
 
