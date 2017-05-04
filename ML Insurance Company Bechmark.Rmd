@@ -5,9 +5,137 @@ date: "May 3, 2017"
 output: html_document
 ---
 
+The nature of this problem is two fold: 1) predict which customers are potentially interested in a caravan insurance policy, and 2) describe the actual or potential customers; and possibly explain why these customers buy a caravan policy.
+
+Using customer data, the goal is to predict whether a customer is interested in acquaring a caravan insurance policy. The data consists of 86 variables and includes product usage data and socio-demographic data derived from zip area codes. The data is from the Dutch data mining company Sentient Machine Research and is based on a real world business problem. The training set contains over 5000 descriptions of customers, including the information of whether or not they have a caravan insurance policy. The test set contains 4000 customers.
+
+For the prediction task, the underlying problem is to the find the subset of customers with a probability of having a caravan insurance policy above some boundary probability. The known policyholders can then be removed and the rest receives a mailing. The boundary depends on the costs and benefits such as of the costs of mailing and benefit of selling insurance policies. To approximate this problem, we want you to find the set of 800 customers in the test set that contains the most caravan policy owners.
+
+The purpose of the description task is to give a clear insight to why customers have a caravan insurance policy and how these customers are different from other customers. Descriptions can be based on regression equations, decision trees, neural network weights, linguistic descriptions, evolutionary programs, graphical representations or any other form. of solutions (e.g. minimize a loss function, maximize comprehensibility, minimize response time, etc.)?
+
+The descriptions and accompanying interpretation must be comprehensible, useful and actionable for a marketing professional with no prior knowledge of computational learning technology. The value of a description is inherently subjective.
+
+
+#Load Libraries
 ```{r}
 library(caret)
 library(corrplot)
-library()
+library(e1071)
+#For parallel processing
+library(parallel)
+library(doParallel)
+```
+
+#Load data and set column names
+```{r}
+rawdata <- read.table("ticdata2000.txt")
+dictionary <- read.csv("dictionary.txt")
+attributes <- dictionary[2:87,]
+attributes <- gsub("(^[^ ]+ )([A-Z]+)(.*$)","\\2", attributes)
+colnames(rawdata) <- attributes
+#Set target attribute to factor
+rawdata$CARAVAN <- as.factor(rawdata$CARAVAN)
+```
+
+#Partition Data
+```{r}
+inTrain <- createDataPartition(rawdata$CARAVAN, p=0.70, list = FALSE)
+training <- rawdata[inTrain,]
+testing <- rawdata[-inTrain,]
+```
+
+#Descriptive Statistics
+- Training dimensions
+```{r}
+dim(training)
+```
+- Attribute Names
+```{r}
+colnames(training)
+```
+- Checking Attribute Classes
+```{r}
+sapply(training, class)
+```
+
+- Summary Statistics
+```{r}
+summary(training)
+```
+- Class Distribution
+```{r}
+cbind(freq = table(training$CARAVAN), 
+      percentage = prop.table(table(training$CARAVAN)) * 100)
+```     
+- Target attribute classes are highly imbalanced. The initial prediction will work with the data as is. Furhter attempts at prediction will follow using oversampling, undersamping, and synthetic sampling techniques to establish best model.
+
+- Attribute Correlations
+```{r}
+correlations <- cor(training[,1:85])
+correlations[lower.tri(correlations, diag=TRUE)] = NA
+correlations = as.data.frame(as.table(correlations))
+correlations = na.omit(correlations)
+correlations = correlations[order(-abs(correlations$Freq)),]
+correlations
+```
+
+- Skewness Check
+```{r}
+apply
+```
+
+
+- Attribute Histograms
+```{r}
+folder <- "./Attribute Histogram/name.png"
+dir.create(dirname(folder), showWarnings = FALSE)
+
+for(i in 1:9){
+        png(paste("./Attribute Histogram/", "0", toString(i),
+                  "plot", colnames(training)[i], ".png", sep = ""),
+            width = 480,
+            height = 480,
+            units = "px")
+        
+        hist(training[,i], main = names(training)[i], xlab = names(training)[i])
+        dev.off()
+}
+for(i in 10:85){
+        png(paste("./Attribute Histogram/", toString(i),
+                  "plot", colnames(training)[i], ".png", sep = ""),
+            width = 480,
+            height = 480,
+            units = "px")
+        
+        hist(training[,i], main = names(training)[i], xlab = names(training)[i])
+        dev.off()
+}
+```
+
+- Attribute density plots
+```{r}
+folder <- "./Attribute Density/name.png"
+dir.create(dirname(folder), showWarnings = FALSE)
+
+for(i in 1:9){
+        png(paste("./Attribute Density/", "0", toString(i),
+                  "plot", colnames(training)[i], ".png", sep = ""),
+            width = 480,
+            height = 480,
+            units = "px")
+        
+        hist(training[,i], main = names(training)[i], xlab = names(training)[i])
+        dev.off()
+}
+for(i in 10:85){
+        png(paste("./Attribute Density/", toString(i),
+                  "plot", colnames(training)[i], ".png", sep = ""),
+            width = 480,
+            height = 480,
+            units = "px")
+        
+        hist(training[,i], main = names(training)[i], xlab = names(training)[i])
+        dev.off()
+}
 ```
 
