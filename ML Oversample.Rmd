@@ -1,0 +1,183 @@
+---
+title: "ML Oversample"
+author: "Michael Harrison"
+date: "May 4, 2017"
+output: html_document
+---
+---
+title: "ML Over-Undersample"
+author: "Michael Harrison"
+date: "May 4, 2017"
+output: html_document
+---
+
+```{r}
+library(ROSE)
+```
+- Training Dimensions
+```{r}
+dim(training)
+```
+- Training Class Percentages
+```{r}
+cbind(freq = table(training$CARAVAN), percentage = prop.table(table(training$CARAVAN))*100)
+```
+
+
+```{r}
+#In case this file doesn't run upon R restart
+#training$CARAVAN <- make.names(training$CARAVAN, unique = FALSE)
+```
+
+#Harness
+```{r}
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3,
+                           classProbs = TRUE, summaryFunction = twoClassSummary)
+metric <- "ROC"
+seed <- 10
+```
+
+```{r}
+#establish over-undersampled training set
+training_over <- ovun.sample(CARAVAN~., data = training,
+                             method = "over", N = 7664)$data
+table(training_over$CARAVAN)
+```
+
+##GLMNET
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+overGLMNET.trans <- train(CARAVAN~., data = training_over, 
+             method = "glmnet", metric = metric,
+             preProc = c("BoxCox"),
+             trControl = fitControl)
+end.time <- Sys.time()
+time.overGLMNET.trans <- end.time - start.time
+paraOff()
+overGLMNET.trans
+```
+
+##Random Forest
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+overRF.trans <- train(CARAVAN~., data = training_over,
+                method = "rf", metric = metric,
+                preProc = c("BoxCox"),
+                trControl = fitControl)
+end.time <- Sys.time()
+time.overRF.trans <- end.time - start.time
+paraOff()
+overRF.trans
+```
+
+
+#Support Vector Machines
+```{r}
+#Support Vector Machines w/ Radial Basis Function
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+overSVM.trans <- train(CARAVAN~., data = training_over, 
+             method = "svmRadial", metric = metric,
+             preProc = c("BoxCox"),
+             trControl = fitControl)
+end.time <- Sys.time()
+time.overSVM.trans <- end.time - start.time
+paraOff()
+overSVM.trans
+```
+
+
+##K Nearest Neighbors
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+overKNN.trans <- train(CARAVAN~., data = training_over, 
+             method = "knn", metric = metric,
+             preProc = c("BoxCox"),
+             trControl = fitControl)
+end.time <- Sys.time()
+time.overKNN.trans <- end.time - start.time
+paraOff()
+overKNN.trans
+```
+
+
+##Stochastic Gradient Boosting
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+overGBM.trans <- train(CARAVAN~., data = training_over,
+                method = "gbm", metric = metric,
+                preProc = c("BoxCox"),
+                trControl = fitControl, verbose = FALSE)
+end.time <- Sys.time()
+time.overGBM.trans <- end.time - start.time
+paraOff()
+overGBM.trans
+```
+ 
+#Compare Results
+```{r}
+overResults <- resamples(list(SVM = overSVM.trans,
+                              GLMNET = overGLMNET.trans,
+                              RF = overRF.trans,
+                              KNN = overKNN.trans,
+                              GBM = overGBM.trans))
+```
+
+```{r}
+scales <- list(x = list(relation = "free"),
+               y = list(relation = "free"))
+dotplot(overResults, main = "Oversampling Results", 
+        scales = scales)
+```
+
+```{r}
+summary(overResults)
+```
+
+```{r}
+overResults$timings
+```
+
+```{r}
+time.taken.over <- list(overSVM = time.overSVM.trans,
+                   overGLMNET = time.overGLMNET.trans,
+                   overRF = time.overRF.trans,
+                   overKNN = time.overKNN.trans,
+                   overGBM = time.overGBM.trans)
+time.taken.over
+```
+
+#Predict on Validation Set
+```{r}
+pred_overSVM <- predict(overSVM.trans, newdata = validation)
+pred_overGLMNET <- predict(overGLMNET.trans, newdata = validation)
+pred_overRF <- predict(overRF.trans, newdata = validation)
+pred_overKNN <- predict(overKNN.trans, newdata = validation)
+pred_overGBM <- predict(overGBM.trans, newdata = validation)
+
+AUC_overSVM <- roc.curve(validation$CARAVAN, pred_overSVM)
+AUC_overGLMNET <- roc.curve(validation$CARAVAN, pred_overGLMNET)
+AUC_overRF <- roc.curve(validation$CARAVAN, pred_overRF)
+AUC_overKNN <- roc.curve(validation$CARAVAN, pred_overKNN)
+AUC_overGBM <- roc.curve(validation$CARAVAN, pred_overGBM)
+```
+
+#AUC/ROC values to compare to other models
+```{r}
+AUC_overResults <- list(overSVM = AUC_overSVM,
+                    overGLMNET = AUC_overGLMNET,
+                    overRF = AUC_overRF,
+                    overKNN = AUC_overKNN,
+                    overGBM = AUC_overGBM)
+AUC_overResults
+```
+

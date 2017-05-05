@@ -129,7 +129,7 @@ underResults <- resamples(list(underSVM = underSVM.trans,
 ```{r}
 scales <- list(x = list(relation = "free"),
                y = list(relation = "free"))
-dotplot(transformResults, main = "Undersampling Results", 
+dotplot(underResults, main = "Undersampling Results", 
         scales = scales)
 ```
 
@@ -150,28 +150,19 @@ time.taken.under <- list(underSVM = time.underSVM.trans,
 time.taken.under
 ```
 
-#Predict
-- Predicting using models built from undersampled dataset on original training set 
-
-##Harness
+#Predict on Validation Set
 ```{r}
-fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3,
-                           classProbs = TRUE, summaryFunction = twoClassSummary)
-metric <- "ROC"
-seed <- 10
+pred_underSVM <- predict(underSVM.trans, newdata = validation)
+pred_underGLMNET <- predict(underGLMNET.trans, newdata = validation)
+pred_underRF <- predict(underRF.trans, newdata = validation)
+pred_underKNN <- predict(underKNN.trans, newdata = validation)
+pred_underGBM <- predict(underGBM.trans, newdata = validation)
 
-
-pred_underSVM <- predict(underSVM.trans, newdata = training)
-pred_underGLMNET <- predict(underGLMNET.trans, newdata = training)
-pred_underRF <- predict(underRF.trans, newdata = training)
-pred_underKNN <- predict(underKNN.trans, newdata = training)
-pred_underGBM <- predict(underGBM.trans, newdata = training)
-
-AUC_underSVM <- roc.curve(training$CARAVAN, pred_underSVM)
-AUC_underGLMNET <- roc.curve(training$CARAVAN, pred_underGLMNET)
-AUC_underRF <- roc.curve(training$CARAVAN, pred_underRF)
-AUC_underKNN <- roc.curve(training$CARAVAN, pred_underKNN)
-AUC_underGBM <- roc.curve(training$CARAVAN, pred_underGBM)
+AUC_underSVM <- roc.curve(validation$CARAVAN, pred_underSVM)
+AUC_underGLMNET <- roc.curve(validation$CARAVAN, pred_underGLMNET)
+AUC_underRF <- roc.curve(validation$CARAVAN, pred_underRF)
+AUC_underKNN <- roc.curve(validation$CARAVAN, pred_underKNN)
+AUC_underGBM <- roc.curve(validation$CARAVAN, pred_underGBM)
 ```
 
 #AUC/ROC values to compare to other models

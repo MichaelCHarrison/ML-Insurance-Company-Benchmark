@@ -1,0 +1,178 @@
+---
+title: "ML Over-Undersample"
+author: "Michael Harrison"
+date: "May 4, 2017"
+output: html_document
+---
+
+```{r}
+library(ROSE)
+```
+- Training Dimensions
+```{r}
+dim(training)
+```
+- Training Class Percentages
+```{r}
+cbind(freq = table(training$CARAVAN), percentage = prop.table(table(training$CARAVAN))*100)
+```
+
+
+```{r}
+#In case this file doesn't run upon R restart
+#training$CARAVAN <- make.names(training$CARAVAN, unique = FALSE)
+```
+
+#Harness
+```{r}
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3,
+                           classProbs = TRUE, summaryFunction = twoClassSummary)
+metric <- "ROC"
+seed <- 10
+```
+
+```{r}
+#establish over-undersampled training set
+training_ovun <- ovun.sample(CARAVAN~., data = training,
+                             method = "both", p = 0.5,
+                             N = 2038, seed = seed)$data
+table(training_ovun$CARAVAN)
+```
+
+##GLMNET
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+ovunGLMNET.trans <- train(CARAVAN~., data = training_ovun, 
+             method = "glmnet", metric = metric,
+             preProc = c("BoxCox"),
+             trControl = fitControl)
+end.time <- Sys.time()
+time.ovunGLMNET.trans <- end.time - start.time
+paraOff()
+ovunGLMNET.trans
+```
+
+##Random Forest
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+ovunRF.trans <- train(CARAVAN~., data = training_ovun,
+                method = "rf", metric = metric,
+                preProc = c("BoxCox"),
+                trControl = fitControl)
+end.time <- Sys.time()
+time.ovunRF.trans <- end.time - start.time
+paraOff()
+ovunRF.trans
+```
+
+
+#Support Vector Machines
+```{r}
+#Support Vector Machines w/ Radial Basis Function
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+ovunSVM.trans <- train(CARAVAN~., data = training_under, 
+             method = "svmRadial", metric = metric,
+             preProc = c("BoxCox"),
+             trControl = fitControl)
+end.time <- Sys.time()
+time.ovunSVM.trans <- end.time - start.time
+paraOff()
+ovunSVM.trans
+```
+
+
+##K Nearest Neighbors
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+ovunKNN.trans <- train(CARAVAN~., data = training_under, 
+             method = "knn", metric = metric,
+             preProc = c("BoxCox"),
+             trControl = fitControl)
+end.time <- Sys.time()
+time.ovunKNN.trans <- end.time - start.time
+paraOff()
+ovunKNN.trans
+```
+
+
+##Stochastic Gradient Boosting
+```{r}
+start.time <- Sys.time()
+paraOn()
+set.seed(seed)
+ovunGBM.trans <- train(CARAVAN~., data = training_under,
+                method = "gbm", metric = metric,
+                preProc = c("BoxCox"),
+                trControl = fitControl, verbose = FALSE)
+end.time <- Sys.time()
+time.ovunGBM.trans <- end.time - start.time
+paraOff()
+ovunGBM.trans
+```
+ 
+#Compare Results
+```{r}
+ovunResults <- resamples(list(SVM = ovunSVM.trans,
+                              GLMNET = ovunGLMNET.trans,
+                              RF = ovunRF.trans,
+                              KNN = ovunKNN.trans,
+                              GBM = ovunGBM.trans))
+```
+
+```{r}
+scales <- list(x = list(relation = "free"),
+               y = list(relation = "free"))
+dotplot(ovunResults, main = "Over-Undersampling Results", 
+        scales = scales)
+```
+
+```{r}
+summary(ovunResults)
+```
+
+```{r}
+ovunResults$timings
+```
+
+```{r}
+time.taken.ovun <- list(ovunSVM = time.ovunSVM.trans,
+                   ovunGLMNET = time.ovunGLMNET.trans,
+                   ovunRF = time.ovunRF.trans,
+                   ovunKNN = time.ovunKNN.trans,
+                   ovunGBM = time.ovunGBM.trans)
+time.taken.ovun
+```
+
+#Predict on Validation set
+```{r}
+pred_ovunSVM <- predict(ovunSVM.trans, newdata = validation)
+pred_ovunGLMNET <- predict(ovunGLMNET.trans, newdata = validation)
+pred_ovunRF <- predict(ovunRF.trans, newdata = validation)
+pred_ovunKNN <- predict(ovunKNN.trans, newdata = validation)
+pred_ovunGBM <- predict(ovunGBM.trans, newdata = validation)
+
+AUC_ovunSVM <- roc.curve(validation$CARAVAN, pred_ovunSVM)
+AUC_ovunGLMNET <- roc.curve(validation$CARAVAN, pred_ovunGLMNET)
+AUC_ovunRF <- roc.curve(validation$CARAVAN, pred_ovunRF)
+AUC_ovunKNN <- roc.curve(validation$CARAVAN, pred_ovunKNN)
+AUC_ovunGBM <- roc.curve(validation$CARAVAN, pred_ovunGBM)
+```
+
+#Validation Results
+```{r}
+AUC_ovunResults <- list(ovunSVM = AUC_ovunSVM,
+                    ovunGLMNET = AUC_ovunGLMNET,
+                    ovunRF = AUC_ovunRF,
+                    ovunKNN = AUC_ovunKNN,
+                    ovunGBM = AUC_ovunGBM)
+AUC_ovunResults
+```
+
