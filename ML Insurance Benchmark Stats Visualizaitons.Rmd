@@ -22,7 +22,7 @@ The descriptions and accompanying interpretation must be comprehensible, useful 
 rawdata <- read.table("ticdata2000.txt")
 dictionary <- read.csv("dictionary.txt")
 attributes <- dictionary[2:87,]
-attributes <- gsub("(^[^ ]+ )([A-Z]+|[A-Z]+[1-9]+)(.*$)","\\2", attributes)
+attributes <- gsub("(^[^ ]+ )([A-Z]+|[A-Z]+[0-9]+)(.*$)","\\2", attributes)
 colnames(rawdata) <- attributes
 #Set target attribute to factor
 rawdata$CARAVAN <- as.factor(rawdata$CARAVAN)
@@ -112,8 +112,8 @@ dir.create(dirname(folder), showWarnings = FALSE)
 for(i in 1:9){
         png(paste("./Attribute Density/", "dens", "0", toString(i),
                   colnames(training)[i], ".png", sep = ""),
-            width = 480,
-            height = 480,
+            width = 600,
+            height = 600,
             units = "px")
         
         plot(density(training[,i]), main = paste(toString(i), "-", names(training)[i]), 
