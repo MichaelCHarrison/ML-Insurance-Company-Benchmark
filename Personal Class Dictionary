@@ -1,14 +1,14 @@
 DATA DICTIONARY
 
 Nr Name Description Domain
-1 MOSTYPE Customer Subtype see L0 -- 
-2 MAANTHUI Number of houses 1 ? 10
-3 MGEMOMV Avg size household 1 ? 6
-4 MGEMLEEF Avg age see L1
-5 MOSHOOFD Customer main type see L2
-6 MGODRK Roman catholic see L3
-7 MGODPR Protestant ...
-8 MGODOV Other religion
+1 MOSTYPE Customer Subtype see L0 --factor
+2 MAANTHUI Number of houses 1 ? 10 --integer
+3 MGEMOMV Avg size household 1 ? 6 --integer
+4 MGEMLEEF Avg age see L1 --factor
+5 MOSHOOFD Customer main type see L2 --factor
+6 MGODRK Roman catholic see L3 --factor
+7 MGODPR Protestant ...--factor
+8 MGODOV Other religion--factor
 9 MGODGE No religion
 10 MRELGE Married
 11 MRELSA Living together
