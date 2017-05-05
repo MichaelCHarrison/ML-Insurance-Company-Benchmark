@@ -150,6 +150,6 @@ dotplot(baselineResults.Acc, main = "Baseline Algorithm Suite Results",
 
 ##Algorithm Timings
 ```{r}
-baselineResults.Acc$timings
+baselineResults.Acc$timings 
 ```
 
