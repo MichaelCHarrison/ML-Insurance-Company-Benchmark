@@ -34,7 +34,7 @@ seed <- 10
 set.seed(seed)
 inTrain <- createDataPartition(rawdata$CARAVAN, p=0.70, list = FALSE)
 training <- rawdata[inTrain,]
-testing <- rawdata[-inTrain,]
+validation <- rawdata[-inTrain,]
 ```
 
 #Descriptive Statistics
