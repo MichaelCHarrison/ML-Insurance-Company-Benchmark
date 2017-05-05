@@ -1,5 +1,5 @@
 ---
-title: "ML Baseline Estimates - ROC"
+title: "ML Transformation Estimates - ROC"
 author: "Michael Harrison"
 date: "May 4, 2017"
 output: html_document
@@ -23,7 +23,7 @@ seed <- 10
 training$CARAVAN <- make.names(training$CARAVAN, unique = FALSE)
 ```
 
-##Configure parallel Processing
+#Configure parallel Processing
 ```{r}
 #Configures parallel processing
 paraOn <- function(){
@@ -61,13 +61,14 @@ para <- function(state){
 start.time <- Sys.time()
 paraOn()
 set.seed(seed)
-fitGLMNET <- train(CARAVAN~., data = training, 
+fitGLMNET.trans <- train(CARAVAN~., data = training, 
              method = "glmnet", metric = metric,
+             preProc = c("BoxCox"),
              trControl = fitControl)
 end.time <- Sys.time()
-time.takenGLMNET <- end.time - start.time
+time.takenGLMNET.trans <- end.time - start.time
 paraOff()
-fitGLMNET
+fitGLMNET.trans
 ```
 
 ##Random Forest
@@ -75,13 +76,14 @@ fitGLMNET
 start.time <- Sys.time()
 paraOn()
 set.seed(seed)
-fitRF <- train(CARAVAN~., data = training,
+fitRF.trans <- train(CARAVAN~., data = training,
                 method = "rf", metric = metric,
+                preProc = c("BoxCox"),
                 trControl = fitControl)
 end.time <- Sys.time()
-time.takenRF <- end.time - start.time
+time.takenRF.trans <- end.time - start.time
 paraOff()
-fitRF
+fitRF.trans
 ```
 
 
@@ -91,13 +93,14 @@ fitRF
 start.time <- Sys.time()
 paraOn()
 set.seed(seed)
-fitSVM <- train(CARAVAN~., data = training, 
+fitSVM.trans <- train(CARAVAN~., data = training, 
              method = "svmRadial", metric = metric,
+             preProc = c("BoxCox"),
              trControl = fitControl)
 end.time <- Sys.time()
-time.takenSVM <- end.time - start.time
+time.takenSVM.trans <- end.time - start.time
 paraOff()
-fitSVM
+fitSVM.trans
 ```
 
 
@@ -106,13 +109,14 @@ fitSVM
 start.time <- Sys.time()
 paraOn()
 set.seed(seed)
-fitKNN <- train(CARAVAN~., data = training, 
+fitKNN.trans <- train(CARAVAN~., data = training, 
              method = "knn", metric = metric,
+             preProc = c("BoxCox"),
              trControl = fitControl)
 end.time <- Sys.time()
-time.takenKNN <- end.time - start.time
+time.takenKNN.trans <- end.time - start.time
 paraOff()
-fitKNN
+fitKNN.trans
 ```
 
 
@@ -121,36 +125,37 @@ fitKNN
 start.time <- Sys.time()
 paraOn()
 set.seed(seed)
-fitGBM <- train(CARAVAN~., data = training,
+fitGBM.trans <- train(CARAVAN~., data = training,
                 method = "gbm", metric = metric,
-                trControl = fitControl, verbose = FALSE, na.action = na.omit)
+                preProc = c("BoxCox"),
+                trControl = fitControl, verbose = FALSE)
 end.time <- Sys.time()
-time.takenBGM <- end.time - start.time
+time.takenBGM.trans <- end.time - start.time
 paraOff()
-fitGBM
+fitGBM.trans
 ```
  
 #Compare Results
 ```{r}
-baselineResults <- resamples(list(SVM = fitSVM,
-                                  GLMNET = fitGLMNET,
-                                  RF = fitRF,
-                                  KNN = fitKNN,
-                                  GBM = fitGBM))
+transformResults <- resamples(list(SVM = fitSVM.trans,
+                                  GLMNET = fitGLMNET.trans,
+                                  RF = fitRF.trans,
+                                  KNN = fitKNN.trans,
+                                  GBM = fitGBM.trans))
 ```
 
 ```{r}
 scales <- list(x = list(relation = "free"),
                y = list(relation = "free"))
-dotplot(baselineResults, main = "Baseline Algorithm Suite Results", 
+dotplot(transformResults, main = "Transformed Algorithm Suite Results", 
         scales = scales)
 ```
 
 ```{r}
-summary(baselineResults)
+summary(transformResults)
 ```
 
 ```{r}
-baselineResults$timings
+transformResults$timings
 ```
 
