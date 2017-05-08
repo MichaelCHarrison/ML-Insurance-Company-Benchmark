@@ -8,6 +8,8 @@ output: html_document
 #Load Libraries
 ```{r, warning=FALSE}
 library(caret)
+library(pROC)
+library(lubridate)
 #For parallel processing
 library(parallel)
 library(doParallel)
@@ -90,15 +92,12 @@ fitRF.trans
 #Support Vector Machines
 ```{r}
 #Support Vector Machines w/ Radial Basis Function
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 fitSVM.trans <- train(CARAVAN~., data = training, 
              method = "svmRadial", metric = metric,
              preProc = c("BoxCox"),
              trControl = fitControl)
-end.time <- Sys.time()
-time.takenSVM.trans <- end.time - start.time
 paraOff()
 fitSVM.trans
 ```
@@ -106,15 +105,12 @@ fitSVM.trans
 
 ##K Nearest Neighbors
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 fitKNN.trans <- train(CARAVAN~., data = training, 
              method = "knn", metric = metric,
              preProc = c("BoxCox"),
              trControl = fitControl)
-end.time <- Sys.time()
-time.takenKNN.trans <- end.time - start.time
 paraOff()
 fitKNN.trans
 ```
@@ -122,15 +118,12 @@ fitKNN.trans
 
 ##Stochastic Gradient Boosting
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 fitGBM.trans <- train(CARAVAN~., data = training,
                 method = "gbm", metric = metric,
                 preProc = c("BoxCox"),
                 trControl = fitControl, verbose = FALSE)
-end.time <- Sys.time()
-time.takenBGM.trans <- end.time - start.time
 paraOff()
 fitGBM.trans
 ```
@@ -157,5 +150,55 @@ summary(transformResults)
 
 ```{r}
 transformResults$timings
+```
+
+#Predict with Validation Set
+
+##Prepare transform using training data
+```{r}
+set.seed(seed)
+x <- training[,1:85]
+preprocessParams <- preProcess(x, method = c("BoxCox"))
+
+valX <- validation[,1:85]
+trans_valX <- predict(preprocessParams, valX)
+valY <- validation[,86]
+valY<- make.names(valY, unique = FALSE)
+```
+
+##SVM Predictions
+
+```{r}
+pred_fitSVM.trans <- predict(fitSVM.trans, newdata=valX, type="prob")
+pred_fitSVM.roc <- roc(validation$CARAVAN, pred_fitSVM.trans$X1)
+pred_fitSVM.roc$auc
+```
+
+##GLMNET Predictions
+```{r}
+pred_fitGLMNET.trans <- predict(fitGLMNET.trans, newdata=valX, type="prob")
+pred_fitGLMNET.roc <- roc(valY, pred_fitGLMNET.trans$X1)
+pred_fitGLMNET.roc$auc
+```
+
+##Random Forest Predictions
+```{r}
+pred_fitRF.trans <- predict(fitRF.trans, newdata=valX, type="prob")
+pred_fitRF.roc <- roc(valY, pred_fitRF.trans$X1)
+pred_fitRF.roc$auc
+```
+
+##KNN Predictions
+```{r}
+pred_fitKNN.trans <- predict(fitKNN.trans, newdata=valX, type="prob")
+pred_fitKNN.roc <- roc(valY, pred_fitKNN.trans$X1)
+pred_fitKNN.roc$auc
+```
+
+##GBM Predictions
+```{r}
+pred_fitGBM.trans <- predict(fitGBM.trans, newdata=valX, type="prob")
+pred_fitGBM.roc <- roc(valY, pred_fitGBM.trans$X1)
+pred_fitGBM.roc$auc
 ```
 
