@@ -1,0 +1,27 @@
+---
+title: "Sampling Results"
+output: html_notebook
+---
+
+#Sampling Results
+
+##Over Sampling
+```{r}
+AUC_overResults
+```
+##Under Sampling Results
+```{r}
+AUC_underResults
+```
+
+
+##Over-Under Sampling
+```{r}
+AUC_ovunResults
+```
+
+##ROSE Sampling
+```{r}
+AUC_roseResults
+```
+
