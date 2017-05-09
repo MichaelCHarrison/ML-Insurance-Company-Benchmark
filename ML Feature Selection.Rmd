@@ -9,6 +9,38 @@ output: html_document
 library(caret)
 ```
 
+#Data
+```{r}
+rawdata <- read.table("ticdata2000.txt")
+dictionary <- read.csv("dictionary.txt")
+attributes <- dictionary[2:87,]
+attributes <- gsub("(^[^ ]+ )([A-Z]+|[A-Z]+[0-9]+)(.*$)","\\2", attributes)
+colnames(rawdata) <- attributes
+#Set target attribute to factor
+rawdata$CARAVAN <- as.factor(rawdata$CARAVAN)
+```
+
+#Partition Data
+```{r}
+seed <- 10
+set.seed(seed)
+inTrain <- createDataPartition(rawdata$CARAVAN, p=0.70, list = FALSE)
+training <- rawdata[inTrain,]
+validation <- rawdata[-inTrain,]
+```
+
+
+```{r}
+set.seed(seed)
+# calculate correlation matrix
+correlationMatrix <- cor(training[,1:65])
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.9)
+highlyCorrelated
+```
+
+
+
+
 ```{r}
 featControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
 seed <- 10
@@ -30,12 +62,16 @@ plot(importance)
 ```
 
 
-#Recursive Feaure Elimination
+#Recursive Feature Elimination
 ```{r}
 controlRFE <- rfeControl(functions = rfFuncs, 
-                         method = "repeatedcv", number = 10, repeats = 3)
+                         method = "cv", number = 10)
+paraOn()
+set.seed(seed)
 resultsRFE <- rfe(training[,1:85], training[,86], sizes = c(1:85),
-                  rfeControl = controlRFE)
+                  metric = "ROC", rfeControl = controlRFE)
+paraOff()
+resultsRFE
 
 ```
 
