@@ -1,0 +1,41 @@
+---
+title: "ML Feature Selection"
+author: "Michael Harrison"
+date: "May 8, 2017"
+output: html_document
+---
+
+```{r}
+library(caret)
+```
+
+```{r}
+featControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+seed <- 10
+```
+
+```{r}
+paraOn()
+set.seed(seed)
+features <- train(CARAVAN~., data=training, 
+               method="lvq", trControl=featControl)
+paraOff()
+importance <- varImp(features)
+print(importance)
+
+```
+
+```{r}
+plot(importance)
+```
+
+
+#Recursive Feaure Elimination
+```{r}
+controlRFE <- rfeControl(functions = rfFuncs, 
+                         method = "repeatedcv", number = 10, repeats = 3)
+resultsRFE <- rfe(training[,1:85], training[,86], sizes = c(1:85),
+                  rfeControl = controlRFE)
+
+```
+
