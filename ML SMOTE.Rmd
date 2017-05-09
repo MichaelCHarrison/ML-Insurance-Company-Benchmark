@@ -1,0 +1,172 @@
+---
+title: "ML SMOTE"
+author: "Michael Harrison"
+date: "May 4, 2017"
+output: html_document
+---
+
+```{r}
+library(caret)
+library(DMwR)
+```
+
+- Training Dimensions
+```{r}
+dim(training)
+```
+- Training Class Percentages
+```{r}
+cbind(freq = table(training$CARAVAN), percentage = prop.table(table(training$CARAVAN))*100)
+```
+
+
+```{r}
+#In case this file doesn't run upon R restart
+#training$CARAVAN <- make.names(training$CARAVAN, unique = FALSE)
+```
+
+#Harness
+```{r}
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3,
+                           classProbs = TRUE, summaryFunction = twoClassSummary)
+metric <- "ROC"
+seed <- 10
+```
+
+```{r}
+#establish over-undersampled training set
+training_smote <- 
+table(training_rose$CARAVAN)
+```
+
+##GLMNET
+```{r}
+paraOn()
+set.seed(seed)
+smoteGLMNET.trans <- train(CARAVAN~., data = training_rose, 
+             method = "glmnet", metric = metric,
+             preProc = c("BoxCox"),
+             trControl = fitControl)
+paraOff()
+roseGLMNET.trans
+```
+
+##Random Forest
+```{r}
+paraOn()
+set.seed(seed)
+smoteRF.trans <- train(CARAVAN~., data = training_rose,
+                method = "rf", metric = metric,
+                preProc = c("BoxCox"),
+                trControl = fitControl)
+paraOff()
+roseRF.trans
+```
+
+
+#Support Vector Machines
+```{r}
+#Support Vector Machines w/ Radial Basis Function
+paraOn()
+set.seed(seed)
+smoteSVM.trans <- train(CARAVAN~., data = training_rose, 
+             method = "svmRadial", metric = metric,
+             preProc = c("BoxCox"),
+             trControl = fitControl)
+paraOff()
+smoteSVM.trans
+```
+
+
+##K Nearest Neighbors
+```{r}
+paraOn()
+set.seed(seed)
+smoteKNN.trans <- train(CARAVAN~., data = training_rose, 
+             method = "knn", metric = metric,
+             preProc = c("BoxCox"),
+             trControl = fitControl)
+paraOff()
+smoteKNN.trans
+```
+
+
+##Stochastic Gradient Boosting
+```{r}
+paraOn()
+set.seed(seed)
+smoteGBM.trans <- train(CARAVAN~., data = training_rose,
+                method = "gbm", metric = metric,
+                preProc = c("BoxCox"),
+                trControl = fitControl, verbose = FALSE)
+paraOff()
+smoteGBM.trans
+```
+ 
+#Compare Results
+```{r}
+smoteResults <- resamples(list(SVM = smoteSVM.trans,
+                              GLMNET = smoteGLMNET.trans,
+                              RF = smoteRF.trans,
+                              KNN = smoteKNN.trans,
+                              GBM = smoteGBM.trans))
+```
+
+```{r}
+scales <- list(x = list(relation = "free"),
+               y = list(relation = "free"))
+dotplot(smoteResults, main = "ROSE Sampling Results", 
+        scales = scales)
+```
+
+```{r}
+summary(roseResults)
+```
+
+```{r}
+smoteTiming <- seconds_to_period(smoteResults$timings$everything)
+time.taken.smote <- list(overSVM = smoteTiming[1],
+                   overGLMNET = smoteTiming[2],
+                   overRF = smoteTiming[3],
+                   overKNN = smoteTiming[4],
+                   overGBM = smoteTiming[5])
+time.taken.smote
+```
+
+#Predict on Validation Set
+
+```{r}
+set.seed(seed)
+x <- training[,1:85]
+preprocessParams <- preProcess(x, method = c("BoxCox"))
+valX <- validation[,1:85]
+trans_valX <- predict(preprocessParams, valX)
+valY <- validation[,86]
+valY<- make.names(valY, unique = FALSE)
+```
+
+
+```{r}
+pred_smoteSVM <- predict(roseSVM.trans, newdata = trans_valX)
+pred_smoteGLMNET <- predict(roseGLMNET.trans, newdata = trans_valX)
+pred_smoteRF <- predict(roseRF.trans, newdata = trans_valX)
+pred_smoteKNN <- predict(roseKNN.trans, newdata = trans_valX)
+pred_smoteGBM <- predict(roseGBM.trans, newdata = trans_valX)
+
+AUC_smoteSVM <- roc.curve(valY, pred_smoteSVM)
+AUC_smoteGLMNET <- roc.curve(valY, pred_smoteGLMNET)
+AUC_smoteRF <- roc.curve(valY, pred_smoteRF)
+AUC_smoteKNN <- roc.curve(valY, pred_smoteKNN)
+AUC_smoteGBM <- roc.curve(valY, pred_smoteGBM)
+```
+
+#AUC/ROC values to compare to other models
+```{r}
+AUC_smoteResults <- list(smoteSVM = AUC_smoteSVM,
+                         smoteGLMNET = AUC_smoteGLMNET,
+                         smoteRF = AUC_smoteRF,
+                         smoteKNN = AUC_smoteKNN,
+                         smoteGBM = AUC_smoteGBM)
+AUC_smoteResults
+```
+
