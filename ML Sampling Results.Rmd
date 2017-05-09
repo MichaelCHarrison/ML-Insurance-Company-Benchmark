@@ -5,6 +5,13 @@ output: html_notebook
 
 #Sampling Results
 
+##BoxCox Transformation
+```{r}
+AUC_transformResults
+```
+
+
+
 ##Over Sampling
 ```{r}
 AUC_overResults
