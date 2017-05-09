@@ -14,7 +14,8 @@ dim(training)
 ```
 - Training Class Percentages
 ```{r}
-cbind(freq = table(training$CARAVAN), percentage = prop.table(table(training$CARAVAN))*100)
+cbind(freq = table(training$CARAVAN), 
+      percentage = prop.table(table(training$CARAVAN))*100)
 ```
 
 
@@ -41,30 +42,24 @@ table(training_ovun$CARAVAN)
 
 ##GLMNET
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 ovunGLMNET.trans <- train(CARAVAN~., data = training_ovun, 
              method = "glmnet", metric = metric,
              preProc = c("BoxCox"),
              trControl = fitControl)
-end.time <- Sys.time()
-time.ovunGLMNET.trans <- end.time - start.time
 paraOff()
 ovunGLMNET.trans
 ```
 
 ##Random Forest
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 ovunRF.trans <- train(CARAVAN~., data = training_ovun,
                 method = "rf", metric = metric,
                 preProc = c("BoxCox"),
                 trControl = fitControl)
-end.time <- Sys.time()
-time.ovunRF.trans <- end.time - start.time
 paraOff()
 ovunRF.trans
 ```
@@ -73,15 +68,12 @@ ovunRF.trans
 #Support Vector Machines
 ```{r}
 #Support Vector Machines w/ Radial Basis Function
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 ovunSVM.trans <- train(CARAVAN~., data = training_under, 
              method = "svmRadial", metric = metric,
              preProc = c("BoxCox"),
              trControl = fitControl)
-end.time <- Sys.time()
-time.ovunSVM.trans <- end.time - start.time
 paraOff()
 ovunSVM.trans
 ```
@@ -89,15 +81,12 @@ ovunSVM.trans
 
 ##K Nearest Neighbors
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 ovunKNN.trans <- train(CARAVAN~., data = training_under, 
              method = "knn", metric = metric,
              preProc = c("BoxCox"),
              trControl = fitControl)
-end.time <- Sys.time()
-time.ovunKNN.trans <- end.time - start.time
 paraOff()
 ovunKNN.trans
 ```
@@ -105,15 +94,12 @@ ovunKNN.trans
 
 ##Stochastic Gradient Boosting
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 ovunGBM.trans <- train(CARAVAN~., data = training_under,
                 method = "gbm", metric = metric,
                 preProc = c("BoxCox"),
                 trControl = fitControl, verbose = FALSE)
-end.time <- Sys.time()
-time.ovunGBM.trans <- end.time - start.time
 paraOff()
 ovunGBM.trans
 ```
@@ -139,34 +125,44 @@ summary(ovunResults)
 ```
 
 ```{r}
-ovunResults$timings
-```
-
-```{r}
-time.taken.ovun <- list(ovunSVM = time.ovunSVM.trans,
-                   ovunGLMNET = time.ovunGLMNET.trans,
-                   ovunRF = time.ovunRF.trans,
-                   ovunKNN = time.ovunKNN.trans,
-                   ovunGBM = time.ovunGBM.trans)
+ovunTiming <- seconds_to_period(ovunResults$timings$Everything)
+time.taken.ovun <- list(overSVM = ovunTiming[1],
+                   overGLMNET = ovunTiming[2],
+                   overRF = ovunTiming[3],
+                   overKNN = ovunTiming[4],
+                   overGBM = ovunTiming[5])
 time.taken.ovun
 ```
 
 #Predict on Validation set
-```{r}
-pred_ovunSVM <- predict(ovunSVM.trans, newdata = validation)
-pred_ovunGLMNET <- predict(ovunGLMNET.trans, newdata = validation)
-pred_ovunRF <- predict(ovunRF.trans, newdata = validation)
-pred_ovunKNN <- predict(ovunKNN.trans, newdata = validation)
-pred_ovunGBM <- predict(ovunGBM.trans, newdata = validation)
 
-AUC_ovunSVM <- roc.curve(validation$CARAVAN, pred_ovunSVM)
-AUC_ovunGLMNET <- roc.curve(validation$CARAVAN, pred_ovunGLMNET)
-AUC_ovunRF <- roc.curve(validation$CARAVAN, pred_ovunRF)
-AUC_ovunKNN <- roc.curve(validation$CARAVAN, pred_ovunKNN)
-AUC_ovunGBM <- roc.curve(validation$CARAVAN, pred_ovunGBM)
+##Transform validation dataset
+```{r}
+set.seed(seed)
+x <- training[,1:85]
+preprocessParams <- preProcess(x, method = c("BoxCox"))
+valX <- validation[,1:85]
+trans_valX <- predict(preprocessParams, valX)
+valY <- validation[,86]
+valY<- make.names(valY, unique = FALSE)
+```
+##Predictions
+
+```{r}
+pred_ovunSVM <- predict(ovunSVM.trans, newdata = trans_valX)
+pred_ovunGLMNET <- predict(ovunGLMNET.trans, newdata = trans_valX)
+pred_ovunRF <- predict(ovunRF.trans, newdata = trans_valX)
+pred_ovunKNN <- predict(ovunKNN.trans, newdata = trans_valX)
+pred_ovunGBM <- predict(ovunGBM.trans, newdata = trans_valX)
+
+AUC_ovunSVM <- roc.curve(valY, pred_ovunSVM)
+AUC_ovunGLMNET <- roc.curve(valY, pred_ovunGLMNET)
+AUC_ovunRF <- roc.curve(valY, pred_ovunRF)
+AUC_ovunKNN <- roc.curve(valY, pred_ovunKNN)
+AUC_ovunGBM <- roc.curve(valY, pred_ovunGBM)
 ```
 
-#Validation Results
+##Validation Results
 ```{r}
 AUC_ovunResults <- list(ovunSVM = AUC_ovunSVM,
                     ovunGLMNET = AUC_ovunGLMNET,

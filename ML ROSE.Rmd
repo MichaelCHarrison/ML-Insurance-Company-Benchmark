@@ -144,31 +144,44 @@ summary(roseResults)
 ```
 
 ```{r}
-roseResults$timings
-```
-
-```{r}
-time.taken.rose <- list(roseSVM = time.roseSVM.trans,
-                   roseGLMNET = time.roseGLMNET.trans,
-                   roseRF = time.roseRF.trans,
-                   roseKNN = time.roseKNN.trans,
-                   roseGBM = time.roseGBM.trans)
+roseTiming <- seconds_to_period(roseResults$timings$Everything)
+time.taken.rose <- list(roseSVM = overTiming[1],
+                        roseGLMNET = overTiming[2],
+                        roseRF = overTiming[3],
+                        roseKNN = overTiming[4],
+                        roseGBM = overTiming[5])
 time.taken.rose
 ```
 
-#Predict on Validation Set
-```{r}
-pred_roseSVM <- predict(roseSVM.trans, newdata = validation)
-pred_roseGLMNET <- predict(roseGLMNET.trans, newdata = validation)
-pred_roseRF <- predict(roseRF.trans, newdata = validation)
-pred_roseKNN <- predict(roseKNN.trans, newdata = validation)
-pred_roseGBM <- predict(roseGBM.trans, newdata = validation)
 
-AUC_roseSVM <- roc.curve(validation$CARAVAN, pred_roseSVM)
-AUC_roseGLMNET <- roc.curve(validation$CARAVAN, pred_roseGLMNET)
-AUC_roseRF <- roc.curve(validation$CARAVAN, pred_roseRF)
-AUC_roseKNN <- roc.curve(validation$CARAVAN, pred_roseKNN)
-AUC_roseGBM <- roc.curve(validation$CARAVAN, pred_roseGBM)
+#Predict on Validation Set
+
+##Preprae validation set using BoxCox Transformation
+
+```{r}
+set.seed(seed)
+x <- training[,1:85]
+preprocessParams <- preProcess(x, method = c("BoxCox"))
+
+valX <- validation[,1:85]
+trans_valX <- predict(preprocessParams, valX)
+valY <- validation[,86]
+valY<- make.names(valY, unique = FALSE)
+```
+
+
+```{r}
+pred_roseSVM <- predict(roseSVM.trans, newdata = trans_valX)
+pred_roseGLMNET <- predict(roseGLMNET.trans, newdata = trans_valX)
+pred_roseRF <- predict(roseRF.trans, newdata = trans_valX)
+pred_roseKNN <- predict(roseKNN.trans, newdata = trans_valX)
+pred_roseGBM <- predict(roseGBM.trans, newdata = trans_valX)
+
+AUC_roseSVM <- roc.curve(valY, pred_roseSVM)
+AUC_roseGLMNET <- roc.curve(valY, pred_roseGLMNET)
+AUC_roseRF <- roc.curve(valY, pred_roseRF)
+AUC_roseKNN <- roc.curve(valY, pred_roseKNN)
+AUC_roseGBM <- roc.curve(valY, pred_roseGBM)
 ```
 
 #AUC/ROC values to compare to other models

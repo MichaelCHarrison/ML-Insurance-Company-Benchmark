@@ -10,6 +10,7 @@ output: html_document
 library(caret)
 library(pROC)
 library(lubridate)
+library(ROSE)
 #For parallel processing
 library(parallel)
 library(doParallel)
@@ -60,15 +61,12 @@ para <- function(state){
 
 ##GLMNET
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 fitGLMNET.trans <- train(CARAVAN~., data = training, 
              method = "glmnet", metric = metric,
              preProc = c("BoxCox"),
              trControl = fitControl)
-end.time <- Sys.time()
-time.takenGLMNET.trans <- end.time - start.time
 paraOff()
 fitGLMNET.trans
 ```
@@ -149,7 +147,13 @@ summary(transformResults)
 ```
 
 ```{r}
-transformResults$timings
+transTiming <- seconds_to_period(transformResults$timings$Everything)
+time.taken.trans <- list(overSVM = transTiming[1],
+                   overGLMNET = transTiming[2],
+                   overRF = transTiming[3],
+                   overKNN = transTiming[4],
+                   overGBM = transTiming[5])
+time.taken.over
 ```
 
 #Predict with Validation Set
@@ -164,41 +168,51 @@ valX <- validation[,1:85]
 trans_valX <- predict(preprocessParams, valX)
 valY <- validation[,86]
 valY<- make.names(valY, unique = FALSE)
+
 ```
 
 ##SVM Predictions
 
 ```{r}
-pred_fitSVM.trans <- predict(fitSVM.trans, newdata=valX, type="prob")
-pred_fitSVM.roc <- roc(validation$CARAVAN, pred_fitSVM.trans$X1)
+pred_fitSVM.trans <- predict(fitSVM.trans, newdata=trans_valX, type="prob")
+pred_fitSVM.roc <- roc(valY, pred_fitSVM.trans$X1)
 pred_fitSVM.roc$auc
 ```
 
 ##GLMNET Predictions
 ```{r}
-pred_fitGLMNET.trans <- predict(fitGLMNET.trans, newdata=valX, type="prob")
+pred_fitGLMNET.trans <- predict(fitGLMNET.trans, newdata=trans_valX, type="prob")
 pred_fitGLMNET.roc <- roc(valY, pred_fitGLMNET.trans$X1)
 pred_fitGLMNET.roc$auc
 ```
 
 ##Random Forest Predictions
 ```{r}
-pred_fitRF.trans <- predict(fitRF.trans, newdata=valX, type="prob")
+pred_fitRF.trans <- predict(fitRF.trans, newdata=trans_valX, type="prob")
 pred_fitRF.roc <- roc(valY, pred_fitRF.trans$X1)
 pred_fitRF.roc$auc
 ```
 
 ##KNN Predictions
 ```{r}
-pred_fitKNN.trans <- predict(fitKNN.trans, newdata=valX, type="prob")
+pred_fitKNN.trans <- predict(fitKNN.trans, newdata=trans_valX, type="prob")
 pred_fitKNN.roc <- roc(valY, pred_fitKNN.trans$X1)
 pred_fitKNN.roc$auc
 ```
 
 ##GBM Predictions
 ```{r}
-pred_fitGBM.trans <- predict(fitGBM.trans, newdata=valX, type="prob")
+pred_fitGBM.trans <- predict(fitGBM.trans, newdata=trans_valX, type="prob")
 pred_fitGBM.roc <- roc(valY, pred_fitGBM.trans$X1)
 pred_fitGBM.roc$auc
+```
+
+```{r}
+AUC_transformResults <- list(transformSVM = pred_fitSVM.roc$auc,
+                        transformGLMNET = pred_fitGLMNET.roc$auc,
+                        transformRF = pred_fitRF.roc$auc,
+                        transformKNN = pred_fitKNN.roc$auc,
+                        transformGBM = pred_fitGBM.roc$auc)
+AUC_transformResults
 ```
 

@@ -40,30 +40,24 @@ table(training_under$CARAVAN)
 
 ##GLMNET
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 underGLMNET.trans <- train(CARAVAN~., data = training_under, 
              method = "glmnet", metric = metric,
              preProc = c("BoxCox"),
              trControl = fitControl)
-end.time <- Sys.time()
-time.underGLMNET.trans <- end.time - start.time
 paraOff()
 underGLMNET.trans
 ```
 
 ##Random Forest
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 underRF.trans <- train(CARAVAN~., data = training_under,
                 method = "rf", metric = metric,
                 preProc = c("BoxCox"),
                 trControl = fitControl)
-end.time <- Sys.time()
-time.underRF.trans <- end.time - start.time
 paraOff()
 underRF.trans
 ```
@@ -72,15 +66,12 @@ underRF.trans
 #Support Vector Machines
 ```{r}
 #Support Vector Machines w/ Radial Basis Function
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 underSVM.trans <- train(CARAVAN~., data = training_under, 
              method = "svmRadial", metric = metric,
              preProc = c("BoxCox"),
              trControl = fitControl)
-end.time <- Sys.time()
-time.underSVM.trans <- end.time - start.time
 paraOff()
 underSVM.trans
 ```
@@ -88,15 +79,12 @@ underSVM.trans
 
 ##K Nearest Neighbors
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 underKNN.trans <- train(CARAVAN~., data = training_under, 
              method = "knn", metric = metric,
              preProc = c("BoxCox"),
              trControl = fitControl)
-end.time <- Sys.time()
-time.underKNN.trans <- end.time - start.time
 paraOff()
 underKNN.trans
 ```
@@ -104,15 +92,12 @@ underKNN.trans
 
 ##Stochastic Gradient Boosting
 ```{r}
-start.time <- Sys.time()
 paraOn()
 set.seed(seed)
 underGBM.trans <- train(CARAVAN~., data = training_under,
                 method = "gbm", metric = metric,
                 preProc = c("BoxCox"),
                 trControl = fitControl, verbose = FALSE)
-end.time <- Sys.time()
-time.underGBM.trans <- end.time - start.time
 paraOff()
 underGBM.trans
 ```
@@ -138,31 +123,42 @@ summary(underResults)
 ```
 
 ```{r}
-underResults$timings
-```
-
-```{r}
-time.taken.under <- list(underSVM = time.underSVM.trans,
-                   underGLMNET = time.underGLMNET.trans,
-                   underRF = time.underRF.trans,
-                   underKNN = time.underKNN.trans,
-                   underGBM = time.underGBM.trans)
+underTiming <- seconds_to_period(underResults$timings$Everything)
+time.taken.under <- list(underSVM = underTiming[1],
+                   underGLMNET = underTiming[2],
+                   underRF = underTiming[3],
+                   underKNN = underTiming[4],
+                   underGBM = underTiming[5])
 time.taken.under
 ```
 
-#Predict on Validation Set
-```{r}
-pred_underSVM <- predict(underSVM.trans, newdata = validation)
-pred_underGLMNET <- predict(underGLMNET.trans, newdata = validation)
-pred_underRF <- predict(underRF.trans, newdata = validation)
-pred_underKNN <- predict(underKNN.trans, newdata = validation)
-pred_underGBM <- predict(underGBM.trans, newdata = validation)
 
-AUC_underSVM <- roc.curve(validation$CARAVAN, pred_underSVM)
-AUC_underGLMNET <- roc.curve(validation$CARAVAN, pred_underGLMNET)
-AUC_underRF <- roc.curve(validation$CARAVAN, pred_underRF)
-AUC_underKNN <- roc.curve(validation$CARAVAN, pred_underKNN)
-AUC_underGBM <- roc.curve(validation$CARAVAN, pred_underGBM)
+#Predict on Validation Set
+
+##Prepare validation set BoxCox Transformation
+```{r}
+set.seed(seed)
+x <- training[,1:85]
+preprocessParams <- preProcess(x, method = c("BoxCox"))
+
+valX <- validation[,1:85]
+trans_valX <- predict(preprocessParams, valX)
+valY <- validation[,86]
+valY<- make.names(valY, unique = FALSE)
+```
+
+```{r}
+pred_underSVM <- predict(underSVM.trans, newdata = valX)
+pred_underGLMNET <- predict(underGLMNET.trans, newdata = valX)
+pred_underRF <- predict(underRF.trans, newdata = valX)
+pred_underKNN <- predict(underKNN.trans, newdata = valX)
+pred_underGBM <- predict(underGBM.trans, newdata = valX)
+
+AUC_underSVM <- roc.curve(valY, pred_underSVM)
+AUC_underGLMNET <- roc.curve(valY, pred_underGLMNET)
+AUC_underRF <- roc.curve(valY, pred_underRF)
+AUC_underKNN <- roc.curve(valY, pred_underKNN)
+AUC_underGBM <- roc.curve(valY, pred_underGBM)
 ```
 
 #AUC/ROC values to compare to other models
